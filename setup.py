@@ -11,6 +11,6 @@ setup(
     author='Ilya Bushmakin',
     author_email='isnicsi@gmail.com',
     license="MIT",
-    packages=["bioseq_dataset"],
+    packages=["bioseq_dataset", "bioseq_dataset.lmdb", "bioseq_dataset.sequence_dataset"],
     install_requires=requirements,
 )
