@@ -2,7 +2,6 @@ import os.path
 import random
 import shutil
 import string
-from glob import glob
 
 from bioseq_dataset.lmdb import LMDBWrapper
 

@@ -38,7 +38,7 @@ def test_sequence_dataset():
     )
     assert "AAAGGG" == dataset["test_id"], "Retrieved sequence is incorrect"
     assert (
-        frozenset(("2", "3")) == dataset["test_id"].seq_classes
+            frozenset(("2", "3")) == dataset["test_id"].seq_classes
     ), "Retrieved classes are incorrect"
     assert 0 == dataset["test_id"].label, "Retrieved label is incorrect"
 
@@ -65,7 +65,7 @@ def test_sequence_dataset_duplicates_test():
     )
     assert "ab" == dataset["2"], "Merging was not successful: sequence is corrupted"
     assert (
-        frozenset("abc") == dataset["2"].seq_classes
+            frozenset("abc") == dataset["2"].seq_classes
     ), "Merging was not successful: classes are corrupted"
     assert 0 == dataset["2"].label, "Merging was not successful: label is corrupted"
     assert dataset["1"] is None, "Merging was not successful: old entry is not removed"

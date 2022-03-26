@@ -54,7 +54,7 @@ class SequenceDataset:
         self.hash_table[hash(item)].append(key)
 
     def add_sequence(
-        self, key: str, seq: SequenceData, merge_duplicates: bool = True
+            self, key: str, seq: SequenceData, merge_duplicates: bool = True
     ) -> None:
         if merge_duplicates:
             duplicate = self.get_duplicate(seq)  # duplicate is a pair (key, seq_data)
@@ -78,17 +78,17 @@ class SequenceDataset:
         return self.db.get_keys()
 
     def get_duplicate(
-        self, item: Union[str, SequenceData]
+            self, item: Union[str, SequenceData]
     ) -> Optional[Tuple[str, SequenceData]]:
         for key in self.hash_table[hash(item)]:
             if self[key] == item:
                 return key, self[key]
 
     def parse_fasta(
-        self,
-        filepath: Union[str, os.PathLike],
-        class_map: Callable[[str], FrozenSet[str]],
-        label_map: Callable[[str], int],
+            self,
+            filepath: Union[str, os.PathLike],
+            class_map: Callable[[str], FrozenSet[str]],
+            label_map: Callable[[str], int],
     ) -> None:
         for entry in SeqIO.parse(filepath, "fasta"):
             seq = SequenceData(str(entry.seq), class_map(entry.id), label_map(entry.id))
