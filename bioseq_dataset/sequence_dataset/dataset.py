@@ -55,9 +55,6 @@ class SequenceDataset:
         for key in keys:
             self.hash_table[hash(self.get_sequence(key))].append(key)
 
-    def _update_hash(self, key: str, item: SequenceData):
-        self.hash_table[hash(item)].append(key)
-
     def add_sequence(
         self, key: str, seq: SequenceData, merge_duplicates: bool = True
     ) -> None:
@@ -71,13 +68,20 @@ class SequenceDataset:
                 )
                 self.db.remove(duplicate[0])
         self.db.write(key, str(seq))
-        self._update_hash(key, seq)
+        self.hash_table[hash(seq)].append(key)
 
-    def get_sequence(self, name: str) -> SequenceData:
-        seq_data = self.db.read(name)
+    def get_sequence(self, key: str) -> SequenceData:
+        seq_data = self.db.read(key)
         if seq_data is None:
             return seq_data
         return SequenceData.from_string(seq_data)
+
+    def remove_sequence(self, key: str) -> None:
+        seq_data = self[key]
+        if seq_data is not None:
+            self.db.remove(key)
+            if key in self.hash_table[hash(seq_data)]:
+                self.hash_table[hash(seq_data)].remove(key)
 
     def get_keys(self):
         return self.db.get_keys()

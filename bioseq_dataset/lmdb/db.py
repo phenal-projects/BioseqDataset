@@ -50,10 +50,8 @@ class LMDBWrapper:
 
     def remove(self, key: str) -> None:
         self.commit()  # commit queued changes to avoid integrity loss
-        if self.txn.delete(
-            key.encode("ascii"),
-        ):
-            self.commit()  # commit changes
+        self.txn.delete(key.encode("ascii"))
+        self.commit()  # commit changes
 
     def __len__(self) -> int:
         if self.txn is None:

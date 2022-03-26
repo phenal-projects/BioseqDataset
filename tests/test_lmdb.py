@@ -25,7 +25,7 @@ def test_lmdb_wrapper():
     assert len(lmdb) == 4, "Incorrect __len__"
 
     # test get_keys
-    assert len(set(lmdb.get_keys()) ^ {"a", "b", "c", "d"})
+    assert len(set(lmdb.get_keys()) ^ {"a", "b", "c", "d"}) == 0, "Keys are incorrect"
 
     # test loading
     del lmdb
