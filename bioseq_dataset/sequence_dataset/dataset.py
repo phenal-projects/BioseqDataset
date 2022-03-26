@@ -1,6 +1,7 @@
 import os
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Union, FrozenSet, Callable
+from typing import Union, FrozenSet, Callable, Optional, Tuple
 
 from Bio import SeqIO
 
@@ -22,28 +23,72 @@ class SequenceData:
         seq_classes = frozenset(seq_classes.split(";"))
         return SequenceData(seq=seq, seq_classes=seq_classes, label=int(label))
 
+    def __eq__(self, other):
+        if not isinstance(other, SequenceData):
+            if isinstance(other, str):
+                return self.seq == other
+            else:
+                return False
+        return self.seq == other.seq
+
+    def __hash__(self):
+        return hash(self.seq)
+
 
 class SequenceDataset:
-    def __init__(self, db_path: Union[str, os.PathLike], read_only: bool = True):
-        self.db = LMDBWrapper(db_path, read_only)
+    def __init__(self, db_path: Union[str, os.PathLike], read_only: bool = True, map_size: int = 31457280):
+        self.db = LMDBWrapper(db_path, read_only, map_size)
+        self.hash_table = None
 
     def init_db(self) -> None:
         self.db.init_db()
+        self._build_hash()
 
-    def add_sequence(self, name: str, seq: SequenceData) -> None:
-        self.db.write(name, str(seq))
+    def _build_hash(self):
+        self.hash_table = defaultdict(list)
+        keys = self.get_keys()
+        for key in keys:
+            self.hash_table[hash(self.get_sequence(key))].append(key)
+
+    def _update_hash(self, key: str, item: SequenceData):
+        self.hash_table[hash(item)].append(key)
+
+    def add_sequence(
+        self, key: str, seq: SequenceData, merge_duplicates: bool = True
+    ) -> None:
+        if merge_duplicates:
+            duplicate = self.get_duplicate(seq)  # duplicate is a pair (key, seq_data)
+            if duplicate is not None:
+                if seq.label != duplicate[1].label:
+                    raise ValueError("Conflicting labels for identical sequences")
+                seq = SequenceData(
+                    seq.seq, seq.seq_classes | duplicate[1].seq_classes, seq.label
+                )
+                self.db.remove(duplicate[0])
+        self.db.write(key, str(seq))
+        self._update_hash(key, seq)
 
     def get_sequence(self, name: str) -> SequenceData:
-        return SequenceData.from_string(self.db.read(name))
+        seq_data = self.db.read(name)
+        if seq_data is None:
+            return seq_data
+        return SequenceData.from_string(seq_data)
 
     def get_keys(self):
         return self.db.get_keys()
 
+    def get_duplicate(
+        self, item: Union[str, SequenceData]
+    ) -> Optional[Tuple[str, SequenceData]]:
+        for key in self.hash_table[hash(item)]:
+            if self[key] == item:
+                return key, self[key]
+
     def parse_fasta(
-            self,
-            filepath: Union[str, os.PathLike],
-            class_map: Callable[[str], FrozenSet[str]],
-            label_map: Callable[[str], int],
+        self,
+        filepath: Union[str, os.PathLike],
+        class_map: Callable[[str], FrozenSet[str]],
+        label_map: Callable[[str], int],
     ) -> None:
         for entry in SeqIO.parse(filepath, "fasta"):
             seq = SequenceData(str(entry.seq), class_map(entry.id), label_map(entry.id))
@@ -54,6 +99,15 @@ class SequenceDataset:
 
     def close(self) -> None:
         self.db.close()
+
+    def __getitem__(self, item: str) -> SequenceData:
+        return self.get_sequence(item)
+
+    def __contains__(self, item: Union[str, SequenceData]):
+        for key in self.hash_table[hash(item)]:
+            if self[key] == item:
+                return True
+        return False
 
     def __len__(self):
         return len(self.db)

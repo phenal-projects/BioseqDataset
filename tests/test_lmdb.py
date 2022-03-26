@@ -1,13 +1,15 @@
 import os.path
+import random
+import shutil
+import string
+from glob import glob
 
 from bioseq_dataset.lmdb import LMDBWrapper
 
 
 def test_lmdb_wrapper():
     # prepare folders
-    if os.path.exists("./tmp/db.lmdb"):
-        os.remove("./tmp/db.lmdb")
-        os.removedirs("./tmp")
+    shutil.rmtree("./tmp/", ignore_errors=True)
     os.makedirs("./tmp")
 
     lmdb = LMDBWrapper("./tmp/db.lmdb", read_only=False)
@@ -35,5 +37,31 @@ def test_lmdb_wrapper():
     assert value == "abc", "Value is corrupted during loading"
 
     # clean up
-    os.remove("./tmp/db.lmdb")
-    os.removedirs("./tmp")
+    shutil.rmtree("./tmp/", ignore_errors=True)
+
+
+def test_lmdb_wrapper_under_load():
+    # prepare folders
+    shutil.rmtree("./tmp/", ignore_errors=True)
+    os.makedirs("./tmp")
+
+    lmdb = LMDBWrapper("./tmp/db.lmdb", read_only=False)
+    lmdb.init_db()
+
+    # write 200*1024 random sequences
+    sequences = []
+    for i in range(200 * 1024):
+        random_sequence = "".join(
+            random.choices(string.ascii_uppercase + string.digits, k=256)
+        )
+        sequences.append(random_sequence)
+        lmdb.write(str(i), random_sequence)
+        if ((i + 1) % 1000) == 0:
+            lmdb.commit()
+    lmdb.commit()
+
+    for i in range(200 * 1024):
+        assert sequences[i] == lmdb.read(str(i)), "Some sequences are corrupted"
+
+    # clean up
+    shutil.rmtree("./tmp/", ignore_errors=True)
