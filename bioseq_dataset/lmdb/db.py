@@ -63,7 +63,7 @@ class LMDBWrapper:
     def get_keys(self) -> List[str]:
         if self.txn is None:
             raise AttributeError("The database is not initialized")
-        return list(self.txn.cursor().iternext(values=False))
+        return [x.decode("ascii") for x in self.txn.cursor().iternext(values=False)]
 
     def commit(self) -> None:
         if self.txn is not None:
