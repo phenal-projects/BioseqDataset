@@ -36,7 +36,12 @@ class SequenceData:
 
 
 class SequenceDataset:
-    def __init__(self, db_path: Union[str, os.PathLike], read_only: bool = True, map_size: int = 31457280):
+    def __init__(
+        self,
+        db_path: Union[str, os.PathLike],
+        read_only: bool = True,
+        map_size: int = 31457280,
+    ):
         self.db = LMDBWrapper(db_path, read_only, map_size)
         self.hash_table = None
 
@@ -54,7 +59,7 @@ class SequenceDataset:
         self.hash_table[hash(item)].append(key)
 
     def add_sequence(
-            self, key: str, seq: SequenceData, merge_duplicates: bool = True
+        self, key: str, seq: SequenceData, merge_duplicates: bool = True
     ) -> None:
         if merge_duplicates:
             duplicate = self.get_duplicate(seq)  # duplicate is a pair (key, seq_data)
@@ -78,21 +83,22 @@ class SequenceDataset:
         return self.db.get_keys()
 
     def get_duplicate(
-            self, item: Union[str, SequenceData]
+        self, item: Union[str, SequenceData]
     ) -> Optional[Tuple[str, SequenceData]]:
         for key in self.hash_table[hash(item)]:
             if self[key] == item:
                 return key, self[key]
 
     def parse_fasta(
-            self,
-            filepath: Union[str, os.PathLike],
-            class_map: Callable[[str], FrozenSet[str]],
-            label_map: Callable[[str], int],
+        self,
+        filepath: Union[str, os.PathLike],
+        class_map: Callable[[str], FrozenSet[str]],
+        label_map: Callable[[str], int],
+        merge_duplicates: bool = True,
     ) -> None:
         for entry in SeqIO.parse(filepath, "fasta"):
             seq = SequenceData(str(entry.seq), class_map(entry.id), label_map(entry.id))
-            self.add_sequence(entry.id, seq)
+            self.add_sequence(entry.id, seq, merge_duplicates)
 
     def commit(self) -> None:
         self.db.commit()
