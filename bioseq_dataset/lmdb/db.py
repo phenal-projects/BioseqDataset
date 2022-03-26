@@ -7,10 +7,10 @@ import lmdb
 
 class LMDBWrapper:
     def __init__(
-            self,
-            db_path: Union[str, os.PathLike] = "./data/sequence.lmdb",
-            read_only: bool = True,
-            map_size: int = 32212254720,
+        self,
+        db_path: Union[str, os.PathLike] = "./data/sequence.lmdb",
+        read_only: bool = True,
+        map_size: int = 32212254720,
     ):
         self.db_path = db_path
         self.read_only = read_only
@@ -49,8 +49,9 @@ class LMDBWrapper:
         self.txn.put(key.encode("ascii"), data.encode("ascii"))
 
     def remove(self, key: str) -> None:
+        self.commit()  # commit queued changes to avoid integrity loss
         if self.txn.delete(
-                key.encode("ascii"),
+            key.encode("ascii"),
         ):
             self.commit()  # commit changes
 
