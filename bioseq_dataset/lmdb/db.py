@@ -73,5 +73,6 @@ class LMDBWrapper:
             self.env.close()
 
     def __del__(self):
-        self.commit()
+        if not self.read_only:
+            self.commit()
         self.close()

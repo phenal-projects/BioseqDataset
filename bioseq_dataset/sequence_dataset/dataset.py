@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Union, FrozenSet, Callable, Optional, Tuple
+from typing import Union, FrozenSet, Callable, Optional, Tuple, List
 
 from Bio import SeqIO
 
@@ -83,7 +83,7 @@ class SequenceDataset:
             if key in self.hash_table[hash(seq_data)]:
                 self.hash_table[hash(seq_data)].remove(key)
 
-    def get_keys(self):
+    def get_keys(self) -> List[str]:
         return self.db.get_keys()
 
     def get_duplicate(
@@ -121,7 +121,3 @@ class SequenceDataset:
 
     def __len__(self):
         return len(self.db)
-
-    def __del__(self):
-        self.commit()
-        self.close()
